@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+models/
+recordings/
+analysis/
+.backups/
+debug/
+
+# Local credentials, caches, and experiment exports.
+.env
+.env.*
+!.env.example
+*.py[cod]
+.pytest_cache/
+*.log
+*.features.csv
+*.features.json
+*.estimate.json
+
+# Internal company drafts are kept locally.
+/docs/PET_BOTTLE_GRIP_METHOD.md
+/docs/PET_BOTTLE_GRIP_VALIDATION_PLAN.md

@@ -1,0 +1,11 @@
+{
+  "participant_id": "self_temp",
+  "reference_grip_kgf": 80.0,
+  "label_source": "provisional_user_assumption",
+  "bottle_id": "current_bottle",
+  "tested_hand": "unspecified",
+  "personal_auto_calibration": true,
+  "guided_rest_s": 2.0,
+  "guided_squeeze_s": 3.0,
+  "guided_release_s": 2.0
+}
