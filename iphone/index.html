@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#24485b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="PREX 관찰">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com; worker-src 'self' blob:; img-src 'self' blob: data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>PREX · 아이폰 파지 변화 관찰</title>
+  <link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-180.png"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header><a class="brand" href="./"><span class="mark">P</span> PREX <small>GRIP LAB</small></a><span class="device-pill">기기 내 분석</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">CAMERA · OBSERVATION</p><h1>쥐는 동안의 변화를<br>눈으로 확인하세요.</h1><p>아이폰 카메라로 손 관절과 병의 변화를 기록합니다. 변화량을 그래프로 비교하고 연구 자료로 내보내세요.</p></section>
+    <div id="notice" role="status" aria-live="polite" hidden></div>
+    <section class="panel setup">
+      <div class="section-title"><h2>측정 조건</h2><span class="step">01</span></div>
+      <div class="fields"><label>참가자 ID<input id="participant" value="participant_01" maxlength="100" autocomplete="off" spellcheck="false"></label><label>측정 손<select id="hand"><option value="right">오른손</option><option value="left">왼손</option></select></label><label class="full">병 조건 ID<input id="bottleId" value="pet_empty_capped_500ml" maxlength="100" autocomplete="off" spellcheck="false"><small>병 종류·물의 양·뚜껑 상태가 같을 때 같은 ID를 사용하세요.</small></label></div>
+      <p class="subtle">악력 정답값을 입력하지 않습니다. 관절·너비의 관찰 가능한 변화량을 기록합니다.</p>
+    </section>
+    <section class="panel capture-panel">
+      <div class="section-title"><h2>카메라로 관찰</h2><span class="step">02</span></div>
+      <div class="camera" id="cameraBox">
+        <video id="video" autoplay muted playsinline webkit-playsinline></video><canvas id="overlay"></canvas>
+        <div class="camera-placeholder" id="placeholder"><svg viewBox="0 0 100 150" aria-hidden="true"><path d="M39 12h22v17l9 14v22l-4 15 4 39v15H30v-15l4-39-4-15V43l9-14Z"/><path d="M39 12v-5h22v5M39 23h22M33 48h34M32 122h36"/></svg><strong>병과 손 전체가 보이게</strong><span>아이폰을 고정하고 밝은 단색 배경에서 시작하세요.</span></div>
+        <div class="camera-top"><span id="sourceBadge">카메라 꺼짐</span><span id="fps">준비 중</span></div><div class="camera-bottom"><span id="handBadge">손 대기</span><span id="bottleBadge">병 대기</span><span id="baselineBadge">기준 대기</span></div>
+      </div>
+      <div class="camera-actions"><button id="cameraStart" class="primary">카메라 켜기</button><button id="flip" class="secondary" disabled>카메라 전환</button><button id="cameraStop" class="quiet" disabled>끄기</button></div>
+      <p id="trackingHint" class="hint">힘을 빼고 병을 가볍게 잡으세요. 병이 인식되지 않아도 손 관절은 기록할 수 있습니다.</p>
+      <div class="legend"><span><i class="green"></i>21개 손 기준점</span><span><i class="blue"></i>관측한 병 경계</span><span><i class="pink"></i>관절 기반 추정</span></div>
+      <div class="live-values"><div><span>평균 굽힘 변화</span><strong id="liveHand">—</strong><small>14개 관절 · °</small></div><div><span>관측 너비 감소</span><strong id="liveWidth">—</strong><small>보이는 구간 · %</small></div><div><span>추정 너비 감소</span><strong id="liveProxy">—</strong><small>손 관절 기반 · %</small></div></div>
+      <div class="guide" id="guide" aria-live="polite"><span id="guideTitle">가볍게 잡은 자세를 기준으로 설정하세요.</span><strong id="countdown"></strong><div class="progress"><i id="progress"></i></div></div>
+      <div class="measure-actions"><button id="baseline" class="secondary" disabled>1. 기준 잡기</button><button id="measure" class="primary" disabled>2. 7초 관찰</button><button id="cancel" class="quiet" disabled>중단</button></div>
+      <p class="subtle">기준 파지 2초 → 최대 노력 파지 3초 → 이완 및 회복 2초. 매 측정 전 기준을 다시 잡아 주세요.</p>
+    </section>
+    <section class="panel file-panel">
+      <div class="section-title"><h2>촬영한 영상 분석</h2><span class="tag">기기 내 처리</span></div>
+      <p>처음 3초 이상은 힘을 빼고 잡고, 이후 3초 힘주기·2초 힘풀기를 촬영한 영상을 선택하세요.</p><label class="file-button secondary">아이폰 영상 선택<input id="videoFile" type="file" accept="video/*"></label>
+      <div id="fileControls" hidden><p id="fileName" class="subtle"></p><label>힘주기를 시작한 시점 (초)<input id="squeezeAt" type="number" min="3" max="55" step="0.1" inputmode="decimal" value="5"></label><p class="subtle">입력한 시점 전 2초·이후 5초를 분석합니다. 영상은 서버로 전송하지 않습니다.</p><button id="analyzeFile" class="primary">이 영상 분석하기</button></div>
+    </section>
+    <section class="panel results-panel" id="results">
+      <div class="section-title"><h2>관찰 결과</h2><span class="step">03</span></div>
+      <select id="history" aria-label="저장된 관찰 선택"><option value="">저장된 관찰이 없습니다.</option></select>
+      <div class="history-actions"><label class="file-button secondary">JSON 결과 불러오기<input id="importJson" type="file" accept="application/json,.json"></label><button id="deleteRecord" class="quiet" disabled>선택 결과 삭제</button></div>
+      <div id="emptyResult" class="empty">관찰을 완료하면 변화량과 그래프가 표시됩니다.<br>내보낸 PREX 아이폰 JSON도 불러올 수 있습니다.</div>
+      <div id="resultContent" hidden>
+        <div class="observation-card"><span>영상 변화 관찰</span><strong id="resultStatus"></strong><p id="resultDetail"></p></div><div id="quality" class="quality"></div>
+        <div class="live-values result-metrics"><div><span>관절 추가 굽힘</span><strong id="resultHand">—</strong><small>최대 노력 구간 P90 · °</small></div><div><span>관측 너비 감소</span><strong id="resultWidth">—</strong><small>최대 노력 구간 P90 · %</small></div><div><span>추정 너비 감소</span><strong id="resultProxy">—</strong><small>최대 노력 구간 P90 · %</small></div></div>
+        <div class="chart-controls"><label>손 관절 보기<select id="handView"><option value="mean">14개 관절 평균</option><option value="fingers">손가락별 평균</option><optgroup id="jointOptions" label="관절별 보기"></optgroup></select></label><label>표시 지표<select id="motion"><option value="change">변화량</option><option value="speed">변화 속도</option><option value="acceleration">변화 가속도</option></select></label></div>
+        <h3>손 관절</h3><canvas id="handChart" aria-label="시간에 따른 손 관절 변화 그래프"></canvas><div id="handLegend" class="legend"></div>
+        <h3>페트병 너비</h3><canvas id="bottleChart" aria-label="관측한 병 너비와 관절 기반 추정 너비 그래프"></canvas><div class="legend"><span><i class="blue"></i>직접 관측</span><span><i class="pink"></i>관절 기반 추정 · 점선</span></div>
+        <p class="subtle">0은 이 촬영의 기준 파지 중앙값입니다. 양수는 추가 굽힘·너비 감소, 음수는 반대 방향입니다. 인식 누락은 선을 끊어 표시합니다.</p>
+        <label class="frame-control">분석 프레임 살펴보기<input id="frameSlider" type="range" min="0" max="0" value="0"><span id="frameLabel"></span></label>
+        <div class="table-scroll"><table><thead><tr><th>관절</th><th>현재 각도</th><th>현재 변화</th><th>힘주기 P90</th><th>속도 P90</th></tr></thead><tbody id="jointRows"></tbody></table></div>
+        <h3>구간별 관측 상태</h3><div class="table-scroll"><table><thead><tr><th>지표</th><th>기준 파지</th><th>최대 노력 파지</th><th>이완 및 회복</th></tr></thead><tbody id="coverageRows"></tbody></table></div>
+        <details><summary>전체 특징 요약 보기</summary><div class="table-scroll"><table><thead><tr><th>지표</th><th>힘주기 P90</th><th>속도 P90</th><th>회복 중앙값</th></tr></thead><tbody id="featureRows"></tbody></table></div></details>
+        <p id="featureCount" class="subtle"></p><div class="export-actions"><button id="exportJson" class="secondary">전체 JSON</button><button id="exportCsv" class="secondary">프레임 CSV</button><button id="exportFeatures" class="secondary">구간 요약 CSV</button><button id="exportPng" class="primary">그래프 PNG</button></div>
+      </div>
+      <p class="research-note">영상에서 관찰한 변화량을 보여 줍니다. 가려진 너비는 관절 기반 추정치로 구분합니다. 관찰값을 악력이나 내부 압력으로 환산하지 않습니다.</p>
+    </section>
+    <section class="panel offline-panel">
+      <div class="section-title"><h2>인터넷 없이 사용</h2><span class="tag">추가 결제 없음</span></div><p id="offlineStatus">처음에는 인터넷으로 앱과 무료 모델 파일을 준비해야 합니다.</p><button id="offline" class="secondary">오프라인 사용 준비</button>
+      <details><summary>아이폰에서 시작하기</summary><ol><li>HTTPS 주소를 Safari로 열고 공유 → 홈 화면에 추가를 누르세요.</li><li>홈 화면의 PREX에서 오프라인 사용 준비를 완료하세요.</li><li>카메라를 허용하고 참가자·손·병 조건을 입력하세요.</li><li>기준 잡기 → 7초 관찰 순서로 진행하세요.</li></ol><p>영상은 서버에 보내지 않습니다. 앱 데이터 삭제에 대비해 JSON과 CSV를 내보내 두세요. 브라우저가 저장 공간을 비우면 모델을 다시 준비해야 할 수 있습니다.</p></details>
+      <details><summary>설치 주소와 지원 환경</summary><p>Safari에서 홈 화면에 추가하는 웹앱입니다. 무료 GitHub Pages 등 HTTPS 정적 호스팅을 사용합니다. 설치 후에는 PC 분석 서버 없이 아이폰 자체에서 처리합니다.</p><p>iOS 17 이상 Safari를 대상으로 합니다. 파일 앱에서 HTML을 열거나 휴대폰으로 일반 HTTP 주소에 접속하면 카메라를 사용할 수 없습니다. 실제 아이폰의 인식률·속도·발열은 별도 확인이 필요합니다.</p></details>
+      <details><summary>무엇을 측정하나요?</summary><p>손 기준점 21개에서 관절 각도 14개를 계산합니다. 엄지 MCP·IP 2개와 나머지 네 손가락 MCP·PIP·DIP 각 3개입니다. 네 손가락 MCP는 손목을 손바닥 쪽 기준으로 사용한 기하학적 각도입니다.</p><p>병 모델은 후보 위치를 찾습니다. 보이는 양옆 경계를 비교하고 손에 가린 구간의 추정값을 직접 관측과 분리합니다. 병 추적 실패가 손 관절 값까지 지우지 않습니다.</p><p>P90은 90백분위수입니다. 속도·가속도는 연결된 유효 프레임에서 계산하며 누락 구간을 이어 계산하지 않습니다.</p><p><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/web_js" target="_blank" rel="noreferrer">손 모델 안내</a> · <a href="https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE" target="_blank" rel="noreferrer">MediaPipe 라이선스</a></p></details>
+    </section>
+    <footer>PREX GRIP LAB <span>촬영 · 분석 · 저장, 모두 이 기기에서</span></footer>
+  </main>
+  <script src="./core.js"></script><script src="./observations.js"></script><script src="./charts.js"></script><script src="./assets.js"></script><script type="module" src="./app.js"></script>
+</body>
+</html>
